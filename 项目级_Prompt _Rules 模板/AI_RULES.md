@@ -200,11 +200,16 @@
 
 ---
 
-## Rule 15 — Hardware Cannot Be Assumed (硬件行为绝不凭空猜测)
+## Rule 15 — Hardware Cannot Be Assumed (硬件行为绝不凭空猜测与透传铁律)
 
 1. 遇到外设寄存器地址、I2C 从机地址（如 OLED 0x78）、SPI 时序模式（CPOL/CPHA）、IMU 内部量程寄存器等硬件细节时：
    * 优先查阅官方芯片 Datasheet、参考手册 RM0008 或 HAL 库头文件。
    * 严禁凭空编造芯片寄存器偏移量或从机应答逻辑。
+2. **【无线串口纯透明透传铁律 (Zero Wireless Driver Overhead)】**：
+   * 本项目的无线串口透传模块为**现成硬件纯透明通道**，出厂与硬件均已配对完成。
+   * **行为实质**：发送端 MCU 只要向片上 `USART1` 写入字节，接收端 MCU 的 `USART1_RX` 就能直接收到完全相同的字节流，等价于一根硬件串口电缆。
+   * **禁止事项**：**严禁编写任何针对无线模块的特殊底层驱动、禁止发送 AT 指令、禁止编写任何无线配对或握手逻辑**！
+   * 单片机软件只需聚焦于通用硬件串口收发（`HAL_UART_Transmit` / 接收中断）及应用层协议解析。
 
 ---
 
@@ -216,3 +221,25 @@
 * **数据流与状态机变动**；
 * **推荐的验证步骤与自测方法**；
 * **潜在风险提示与已知边界条件**。
+
+---
+
+## Rule 17 — Third-Party Driver & Framework Integration Rules (第三方驱动与开源框架接入准则)
+
+项目已在 `驱动_框架/` 归档 LibDriver MPU6500、0.96寸 OLED 官方例程与 MiaoUI 菜单框架。后续在驱动实现与接入时，必须严格遵守以下准则：
+
+1. **【MPU6500 DMP 绝对禁令与软件滤波合规红线】**：
+   * 竞赛规则严禁使用带内部硬件解算（DMP）或现成姿态输出的模块。
+   * LibDriver 源码中包含 `driver_mpu6500_dmp.c/.h` 及相关 DMP 固件头文件，**严禁在工程中编译、引用或调用任何 DMP 接口**！
+   * MPU6500 只能作为原始传感器数据采集器（使用 `driver_mpu6500_basic.c`），所有的姿态角滤波解算（Pitch、Roll、Yaw）必须在 STM32 本地由软件服务层（`srv_imu_filter`）运行互补滤波或 Mahony 算法完成。
+2. **【硬件 I2C 适配与禁止降级模拟 I2C 准则】**：
+   * 参考例程 `01-0.96OLED显示屏STM32F103C8T6_IIC例程` 中采用的是软件模拟 GPIO 时序。
+   * 本项目硬件已通过 CubeMX 将 PB6/PB7 严格配置为片上**硬件 I2C1 外设 (400kHz Fast Mode)**。
+   * 移植 OLED 底层驱动时，**严禁使用软件模拟 I2C 翻转引脚**，必须将数据发送适配为 STM32 HAL 硬件 I2C 发送（`HAL_I2C_Mem_Write()` 或 `HAL_I2C_Master_Transmit()`），并加入总线超时防死锁机制。
+3. **【框架轻量化与 Flash/RAM 资源红线】**：
+   * STM32F103C8T6 硬件资源受限（64KB Flash，20KB SRAM），栈空间配置为 2048 字节。
+   * 参考框架 MiaoUI 工程中集成了 FreeRTOS、FatFS、MultiButton 等组件，**严禁将 RTOS 或文件系统引入本项目**。
+   * 移植 MiaoUI 时必须仅引入纯 C 核心 UI 调度器与基础控件，1KB 屏幕显存必须作为静态全局变量分配，严禁在函数栈中分配局部显存，严禁引入未使用的庞大字库或图片资源。
+4. **【驱动接口隔离与解耦原则】**：
+   * 接入 LibDriver 等第三方库时，严格遵照其提供的平台适配文件（如 `driver_mpu6500_interface.c`）实现硬件函数指针，不得直接侵入修改其底层核心驱动文件 `driver_mpu6500.c/.h`。
+   * 业务层与服务层不得直接包含 LibDriver 底层头文件，统一由 `bsp_imu` 向外暴露规范的物理量采集接口。
