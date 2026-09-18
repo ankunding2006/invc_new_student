@@ -1,20 +1,29 @@
-# TIMING_DESIGN.md — 系统级时序设计与任务调度规范书
+# 早期调度与时序预算
+
+[文档导航](../../README.md) · [归档索引](../README.md)
+
+> 历史资料：保留早期设计推导与当时约定，不代表当前代码或已完成验收。继续开发请阅读[当前状态](../../project-status.md)、[实现架构](../../architecture.md)与[开发约定](../../development.md)。
+
 
 > **设计依据**：  
-> 依据 2026 INVC 嵌入式软件考核要求、系统行为规范（`SYSTEM_BEHAVIOR.md`）、接口设计规范（`MODULE_INTERFACES.md`）与数据设计规范（`DATA_DESIGN.md`），本文档确立手柄发送端（Sender）与接收端（Receiver）两端系统的时钟基准、协作式时间轮任务调度模型、各任务执行周期与最坏情况执行时间（WCET）预算、I2C 总线分页切片防饥饿机制以及中断优先级分配。  
+> 依据 2026 INVC 嵌入式软件考核要求、系统行为规范（[SYSTEM_BEHAVIOR.md](state-machines.md)）、接口设计规范（[MODULE_INTERFACES.md](interfaces.md)）与数据设计规范（[DATA_DESIGN.md](data-model.md)），本文档确立手柄发送端（Sender）与接收端（Receiver）两端系统的时钟基准、协作式时间轮任务调度模型、各任务执行周期与最坏情况执行时间（WCET）预算、I2C 总线分页切片防饥饿机制以及中断优先级分配。  
 > **核心铁律**：主循环与任务函数中**绝对严禁调用任何形式的阻塞延时 (`HAL_Delay()`)**（Rule 7）。所有任务调度均由非阻塞时间戳差值驱动。
 
 ---
 
+> 核验说明（2026-09-17）：本文是设计预算，不是性能实测。80 次/秒 × 2.8ms = 22.4% CPU 阻塞占用；原表低估十倍。12.5ms 在 1ms tick 下不能直接精确表达，可在后续实现中用 12/13ms 交替截止时间。下方 NVIC 表是目标配置，当前实际为 SysTick=15、已启用 USART/DMA=0，接收端 USART2 IRQ 尚未启用。
+
 ## 一、 时钟基准与协作式时间轮调度架构
 
 ### 1.1 硬件时钟基准 (Clock Base)
+
 * **主频时钟 (SYSCLK)**：外部 8MHz 无源晶振 (HSE) 经内部 PLL 9 倍频锁定为 **72.0 MHz**，单周期指令时间为 $T_{\text{cpu}} = \frac{1}{72\text{MHz}} \approx 13.88\text{ ns}$。
 * **低速外设总线 (APB1)**：2 分频至 **36.0 MHz**（I2C1 与 USART2 挂载于此）。
 * **高速外设总线 (APB2)**：不分频，保持 **72.0 MHz**（SPI1 与 USART1 挂载于此）。
 * **系统滴答定时器 (SysTick)**：配置为每 $1.0\text{ ms}$（1000Hz）触发一次硬件中断，维护递增时间戳全局变量 `uwTick`（通过 `HAL_GetTick()` 读取）。
 
 ### 1.2 协作式非阻塞时间轮调度模型 (Cooperative Time-Wheel)
+
 两端主控制循环均采用**时间戳差值无阻塞轮询**模型。每个周期性任务维护独立的“上一次执行时间戳”：
 ```c
 /* 时间轮调度器通用模式 */
@@ -27,7 +36,7 @@ if ((current_tick - last_task_tick) >= TASK_PERIOD_MS) {
 ```
 * **特点**：
   1. 避免使用重量级 RTOS，零任务切换开销，极大节省 RAM（无任务独立堆栈消耗）；
-  2. 满足 100% 确定性时钟轮转，时间抖动控制在微秒级；
+  2. 合作式调度会受到前序阻塞任务影响，2.8ms 页传输可产生毫秒级抖动，需实测；
   3. 通过原子时间差计算 `(current_tick - last_task_tick) >= PERIOD`，自动应对 `uwTick` 49.7 天单片机时钟回绕（Rollover）问题。
 
 ---
@@ -36,17 +45,18 @@ if ((current_tick - last_task_tick) >= TASK_PERIOD_MS) {
 
 ### 2.1 发送端任务执行周期与时间预算表 (Sender Budget)
 
-| 任务标识 | 函数入口 | 周期 (Period) | 频率 (Freq) | 最大允许耗时 (WCET) | 典型测量耗时 | CPU 时间占比 | 功能描述与时序要求 |
+| 任务标识 | 函数入口 | 周期 (Period) | 频率 (Freq) | 最大允许耗时 (WCET) | 设计估算耗时（未实测） | CPU 时间占比 | 功能描述与时序要求 |
 |---|---|---|---|---|---|---|---|
 | `TASK_KEY_SCAN` | `bsp_key_tick_10ms()` | **10 ms** | 100 Hz | 100 μs | ~25 μs | 0.25% | 4路按键消抖、识别长按2s与300ms双击 |
 | `TASK_JOYSTICK_SW` | `bsp_joystick_get_data()` | **20 ms** | 50 Hz | 200 μs | ~45 μs | 0.23% | 读取 ADC1 DMA 缓冲，计算归一化与物理电压 |
 | `TASK_IMU_ATTITUDE`| `bsp_imu_read_raw()` + `srv_imu_filter_update()` | **20 ms** | 50 Hz | 800 μs | ~280 μs | 1.40% | SPI1 读取 MPU6500 原始数据，本地解算欧拉角 |
 | `TASK_TELEMETRY_TX`| `srv_protocol_pack()` + `bsp_usart_transmit()` | **20 ms** | 50 Hz | 300 μs | ~80 μs | 0.40% | 组装 23 字节数据帧并写入 USART1 启动发送 |
-| `TASK_OLED_SLICE` | `app_menu_update()` + `bsp_oled_slice_update()` | **12.5 ms** (切片) | 80 Hz | 3.5 ms | ~2.8 ms | 2.80% | 8页分页切片刷屏（每12.5ms刷1页，整屏100ms） |
+| `TASK_OLED_SLICE` | `app_menu_update()` + `bsp_oled_slice_update()` | **12.5 ms** (切片) | 80 Hz | 3.5 ms | ~2.8 ms | 22.40% | 8页分页切片刷屏（每12.5ms刷1页，整屏100ms） |
 | `TASK_DEBUG_LOG` | `bsp_usart_printf(USART2)` | **100 ms** | 10 Hz | 500 μs | ~160 μs | 0.16% | 本地 USART2 格式化输出比对日志 |
-| **【发送端总体负载】**| — | — | — | — | — | **~ 5.24%** | **峰值 CPU 占用率 < 12%，极度充裕安全** |
+| **【发送端总体负载】**| — | — | — | — | — | **~ 24.84%** | **以上为估算平均负载，峰值与余量需实测** |
 
 ### 2.2 发送端核心时序相位对齐图 (Phase Alignment)
+
 为了确保外发出的遥测包包含最新、时间差最小的物理量，`JOYSTICK` 采样、`IMU` 姿态解算与 `TELEMETRY` 封包必须保持**同周期、串行管道对齐**：
 
 ```text
@@ -70,21 +80,22 @@ OLED 切片   [Page 0]   [Page 1]   [Page 2]   [Page 3]   [Page 4]   [Page 5]   
 
 ### 3.1 接收端任务执行周期与时间预算表 (Receiver Budget)
 
-| 任务标识 | 函数入口 / 机制 | 周期 (Period) | 调度频率 (Freq) | 最大允许耗时 (WCET) | 典型测量耗时 | CPU 时间占比 | 功能描述与时序要求 |
+| 任务标识 | 函数入口 / 机制 | 周期 (Period) | 调度频率 (Freq) | 最大允许耗时 (WCET) | 设计估算耗时（未实测） | CPU 时间占比 | 功能描述与时序要求 |
 |---|---|---|---|---|---|---|---|
 | `ISR_USART1_RX` | `USART1_IRQHandler()` | 异步中断 | 1150 Hz (50Hz包) | 5 μs / 字节 | ~2 μs | 0.23% | 硬件串口接收中断，将字节快速压入环形队列 |
 | `TASK_STREAM_PARSE`| `srv_protocol_parser_feed_byte()` | **主循环轮询** | ≥200 Hz | 300 μs | ~60 μs | 1.20% | 消费环形队列，单字节有限状态机推进解包 |
 | `TASK_PC_FORWARD` | `bsp_usart_forward_packet()` | 事件驱动 | 50 Hz (包触发) | 200 μs | ~50 μs | 0.25% | 成功解析有效帧后立即触发 USART2 向上位机推流 |
-| `TASK_OLED_SLICE` | `app_ui_update()` + `bsp_oled_slice_update()` | **12.5 ms** (切片) | 80 Hz | 3.5 ms | ~2.8 ms | 2.80% | 接收端 OLED 8页分页切片刷屏（整屏100ms刷新） |
+| `TASK_OLED_SLICE` | `app_ui_update()` + `bsp_oled_slice_update()` | **12.5 ms** (切片) | 80 Hz | 3.5 ms | ~2.8 ms | 22.40% | 接收端 OLED 8页分页切片刷屏（整屏100ms刷新） |
 | `TASK_LINK_MONITOR`| `app_receiver_check_timeout()` | **100 ms** | 10 Hz | 50 μs | ~10 μs | 0.01% | 检查超时（最后有效包距今 >1000ms 判为离线） |
-| `TASK_STATS_1SEC` | `srv_stats_tick_1000ms()` | **1000 ms** | 1 Hz | 50 μs | ~15 μs | 0.002% | 1.0 秒定时滑动窗口结算频率 Hz 与丢包率 % |
-| **【接收端总体负载】**| — | — | — | — | — | **~ 4.49%** | **峰值 CPU 占用率 < 10%，极高确定性** |
+| `TASK_STATS_1SEC` | `srv_stats_tick_1000ms()` | **1000 ms** | 1 Hz | 50 μs | ~15 μs | 0.002% | 1.0 秒定时固定窗口结算频率 Hz 与丢包率 % |
+| **【接收端总体负载】**| — | — | — | — | — | **~ 24.09%** | **以上为估算平均负载，峰值与余量需实测** |
 
 ---
 
 ## 四、 总线时序与长时操作切片防饥饿机制 (Anti-Starvation Slicing)
 
 ### 4.1 硬件总线物理传输时延分析
+
 1. **SPI1 总线传输时延**：
    * 配置：72MHz 8 分频 = **9.0 MBits/s**，主全双工；
    * 读取 MPU6500 14 字节连续数据（Accel, Temp, Gyro）：
@@ -104,6 +115,7 @@ OLED 切片   [Page 0]   [Page 1]   [Page 2]   [Page 3]   [Page 4]   [Page 5]   
      - 会直接导致按键双击判定失败（300ms 窗口失真）或长按时间计算误差。
 
 ### 4.2 解决方案：8 页分页切片刷屏机制 (Page Slicing Strategy)
+
 为彻底解决 I2C 霸占 CPU 问题，设计 **分页时间片切片刷屏机制**：
 * **切片原理**：SSD1306 屏幕由 Page 0 到 Page 7 共 8 页组成，每页包含 128 字节数据；
 * **时序切片**：每隔 $12.5\text{ ms}$ 发送 1 个 Page（128 字节点阵数据 + 3 字节控制指令）；
@@ -120,7 +132,12 @@ void bsp_oled_slice_update(void) {
     static uint8_t current_page = 0;
     
     /* 单次只向硬件 I2C 发送当前页的 128 字节显存，耗时 < 3ms */
-    bsp_oled_write_page(current_page, &s_oled_gram[0][current_page]);
+    /* s_oled_gram[128][8] 同页像素并不连续，先收集到页缓冲。 */
+    static uint8_t page_buf[128];
+    for (uint16_t x = 0; x < 128; ++x) {
+        page_buf[x] = s_oled_gram[x][current_page];
+    }
+    bsp_oled_write_page(current_page, page_buf);
     
     current_page = (current_page + 1) % 8;
 }

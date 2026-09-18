@@ -1,4 +1,9 @@
-# MODULE_ARCHITECTURE.md — 软件分层架构与模块划分设计说明书 (Step 5 & 6)
+# 早期分层架构与模块划分
+
+[文档导航](../../README.md) · [归档索引](../README.md)
+
+> 历史资料：保留早期设计推导与当时约定，不代表当前代码或已完成验收。继续开发请阅读[当前状态](../../project-status.md)、[实现架构](../../architecture.md)与[开发约定](../../development.md)。
+
 
 > **工序定位**：15步引导式开发流程的 **⑤ 软件架构设计 (BSP / Driver / Service / App)** 与 **⑥ 模块划分 (功能模块与职责解耦)**。  
 > **核心使命**：在已确立的工程需求（REQUIREMENTS.md）与系统行为状态机（SYSTEM_BEHAVIOR.md）指导下，完成系统的纵向分层架构规划与横向功能模块解耦，明确每个模块的层级归属、职责边界与依赖关系。  
@@ -27,6 +32,7 @@
 ```
 
 ### 分层设计的核心工程价值：
+
 1. **极高的跨平台可移植性**：
    * **Layer 3 (Service)** 采用纯 ANSI C 编写，**严禁包含 `stm32f1xx_hal.h`**。即使未来主控芯片从 STM32F103 更换为 STM32F407、H743 或其他厂商芯片，Service 层（协议引擎、姿态滤波、环形缓冲、丢包统计算法）**代码一行不用改**。
    * **Layer 2 (BSP)** 专职适配芯片外设接口，换芯片时仅需重新实现 BSP 层与 HAL 库的对接，保护上层投资。
@@ -88,7 +94,7 @@
 
 ## 三、 接收端 (Receiver) 模块划分与职责定义
 
-接收端紧紧围绕**“流式数据解包 $\rightarrow$ 1秒滑动窗口统计 $\rightarrow$ 双端同步呈现”**展开模块拆解：
+接收端紧紧围绕**“流式数据解包 $\rightarrow$ 1秒固定窗口统计 $\rightarrow$ 双端同步呈现”**展开模块拆解：
 
 ```text
 【接收端 Receiver】
@@ -99,7 +105,7 @@
 
 [Layer 3: Service / Middleware] (纯 C，无硬件依赖)
 ├── srv_protocol_parser (流式解包有限状态机：逐字节消费、抗粘包/断包、抗噪声再同步、校验比对)
-├── srv_stats           (通信统计引擎：维护 1s 滑动窗口，计算通信频率 Hz 与序列号差值丢包率 %)
+├── srv_stats           (通信统计引擎：维护 1s 固定窗口，计算通信频率 Hz 与序列号差值丢包率 %)
 └── srv_ring_buffer     (通用环形缓冲区：暂存串口中断收到的字节流)
 
 [Layer 2: BSP / Driver]
@@ -127,6 +133,7 @@
 ## 四、 跨层数据交互与模块协作架构 (Collaboration & Dataflow)
 
 ### 4.1 手柄端数据流动闭环
+
 ```text
 [ADC/GPIO/SPI 中断或DMA]
         │ (硬件层 Layer 1)
@@ -148,6 +155,7 @@
 ```
 
 ### 4.2 接收端数据流动闭环
+
 ```text
 [USART1 接收中断] (Layer 1)
         │
@@ -173,8 +181,8 @@
 ## 五、 模块接口规范与跨层协议设计
 
 * **状态标记**：**已完成模块接口设计 (Step 7 已完成)**。
-* **详细接口设计规范书**：所有模块的详细数据结构体、枚举、宏定义与对外暴露的 API 函数原型已落地沉淀于系统级规范文件 [`MODULE_INTERFACES.md`](file:///c:/Users/34118/Desktop/invc_exam/project/项目级_Prompt%20_Rules%20模板/MODULE_INTERFACES.md)。
-* **执行准则**：代码实现必须严格遵循 `MODULE_INTERFACES.md` 中的参数类型与返回值约束，严禁随意篡改函数签名破坏跨模块契约。
+* **详细接口设计规范书**：所有模块的详细数据结构体、枚举、宏定义与对外暴露的 API 函数原型已落地沉淀于系统级规范文件 [MODULE_INTERFACES.md](interfaces.md)。
+* **执行准则**：代码实现必须严格遵循 [MODULE_INTERFACES.md](interfaces.md) 中的参数类型与返回值约束，严禁随意篡改函数签名破坏跨模块契约。
 
 ---
 

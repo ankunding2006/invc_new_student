@@ -1,29 +1,30 @@
-#ifndef __APP_SENDER_H
-#define __APP_SENDER_H
-
-#ifdef __cplusplus
-extern "C" {
-#endif
-
-#include <stdint.h>
-#include <stdbool.h>
-
-/**
- * @brief 手柄系统工作模式枚举
- */
-typedef enum {
-    APP_STATE_INIT = 0,         /* 上电初始化与硬件自检 */
-    APP_STATE_CALIBRATING,      /* 传感器零偏静止校准中 */
-    APP_STATE_NORMAL,           /* 正常运行遥控模式 */
-    APP_STATE_FAULT_DEGRADED    /* 外设掉线或总线异常降级运行 */
+#ifndef APP_SENDER_H
+#define APP_SENDER_H
+#include "srv_protocol.h"
+#include "imu_types.h"
+#include "srv_input.h"
+typedef enum
+{
+    APP_STATE_INIT,
+    APP_STATE_CALIBRATING,
+    APP_STATE_NORMAL,
+    APP_STATE_FAULT_DEGRADED
 } app_state_t;
-
-void        app_sender_init(void);
-void        app_sender_task(void);
+typedef struct
+{
+    telemetry_payload_t telemetry;
+    imu_raw_t raw;
+    imu_euler_t euler, raw_angles;
+    app_state_t state;
+    uint32_t tx, acked, retries, expired, events;
+    key_msg_t last_key;
+    bool link_online;
+} sender_view_t;
+void app_sender_init(void);
+void app_sender_task(void);
 app_state_t app_sender_get_state(void);
-
-#ifdef __cplusplus
-}
+const sender_view_t *app_sender_view(void);
+void app_sender_recalibrate(void);
+void app_sender_reset_tx_count(void);
+void app_sender_reset_events(void);
 #endif
-
-#endif /* __APP_SENDER_H */

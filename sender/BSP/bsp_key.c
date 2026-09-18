@@ -1,27 +1,24 @@
 #include "bsp_key.h"
-#include <stddef.h>
-
+#include "main.h"
 void bsp_key_init(void)
 {
-    /* 按键 GPIO 状态机初始化 (PB0, PB1, PB10, PB11 内部上拉输入) */
+    srv_keys_init();
 }
-
 void bsp_key_tick_10ms(void)
 {
-    /* 10ms 非阻塞消抖与状态转移逻辑骨架 */
+    uint32_t pins = GPIOB->IDR;
+    uint8_t mask = 0;
+    const uint16_t bits[4] = {KEY1_Pin, KEY2_Pin, KEY3_Pin, KEY4_Pin};
+    for (unsigned i = 0; i < 4; i++)
+        if (!(pins & bits[i]))
+            mask |= (uint8_t)(1U << i);
+    srv_keys_feed(mask, HAL_GetTick());
 }
-
-bool bsp_key_get_event(key_msg_t *p_msg)
+bool bsp_key_get_event(key_msg_t *out)
 {
-    if (p_msg == NULL) {
-        return false;
-    }
-    p_msg->id = KEY_ID_1;
-    p_msg->event = KEY_EVENT_NONE;
-    return false;
+    return srv_keys_pop(out);
 }
-
 uint8_t bsp_key_get_mask(void)
 {
-    return 0;
+    return srv_keys_mask();
 }

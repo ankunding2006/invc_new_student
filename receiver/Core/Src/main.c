@@ -24,6 +24,7 @@
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
+#include "app_receiver.h"
 
 /* USER CODE END Includes */
 
@@ -92,6 +93,7 @@ int main(void)
   MX_USART1_UART_Init();
   MX_USART2_UART_Init();
   /* USER CODE BEGIN 2 */
+  app_receiver_init();
 
   /* USER CODE END 2 */
 
@@ -102,6 +104,7 @@ int main(void)
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
+    app_receiver_task();
   }
   /* USER CODE END 3 */
 }

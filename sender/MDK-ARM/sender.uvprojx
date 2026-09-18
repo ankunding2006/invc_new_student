@@ -336,7 +336,7 @@
               <MiscControls />
               <Define>USE_HAL_DRIVER,STM32F103xB</Define>
               <Undefine />
-              <IncludePath>../Core/Inc;../Drivers/STM32F1xx_HAL_Driver/Inc/Legacy;../Drivers/STM32F1xx_HAL_Driver/Inc;../Drivers/CMSIS/Device/ST/STM32F1xx/Include;../Drivers/CMSIS/Include</IncludePath>
+              <IncludePath>../Core/Inc;../Drivers/STM32F1xx_HAL_Driver/Inc/Legacy;../Drivers/STM32F1xx_HAL_Driver/Inc;../Drivers/CMSIS/Device/ST/STM32F1xx/Include;../Drivers/CMSIS/Include;../App;../BSP;../Service</IncludePath>
             </VariousControls>
           </Cads>
           <Aads>
@@ -1008,7 +1008,92 @@
         <Group>
           <GroupName>::CMSIS</GroupName>
         </Group>
-      </Groups>
+        <Group>
+        <GroupName>App</GroupName>
+        <Files>
+            <File>
+              <FileName>app_menu.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>../App/app_menu.c</FilePath>
+            </File>
+            <File>
+              <FileName>app_sender.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>../App/app_sender.c</FilePath>
+            </File>
+        </Files>
+      </Group>
+      <Group>
+        <GroupName>BSP</GroupName>
+        <Files>
+            <File>
+              <FileName>bsp_imu.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>../BSP/bsp_imu.c</FilePath>
+            </File>
+            <File>
+              <FileName>bsp_joystick.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>../BSP/bsp_joystick.c</FilePath>
+            </File>
+            <File>
+              <FileName>bsp_key.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>../BSP/bsp_key.c</FilePath>
+            </File>
+            <File>
+              <FileName>bsp_oled.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>../BSP/bsp_oled.c</FilePath>
+            </File>
+            <File>
+              <FileName>bsp_switch.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>../BSP/bsp_switch.c</FilePath>
+            </File>
+            <File>
+              <FileName>bsp_usart.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>../BSP/bsp_usart.c</FilePath>
+            </File>
+        </Files>
+      </Group>
+      <Group>
+        <GroupName>Service</GroupName>
+        <Files>
+            <File>
+              <FileName>srv_imu_filter.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>../Service/srv_imu_filter.c</FilePath>
+            </File>
+            <File>
+              <FileName>srv_input.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>../Service/srv_input.c</FilePath>
+            </File>
+            <File>
+              <FileName>srv_link.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>../Service/srv_link.c</FilePath>
+            </File>
+            <File>
+              <FileName>srv_pc.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>../Service/srv_pc.c</FilePath>
+            </File>
+            <File>
+              <FileName>srv_protocol.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>../Service/srv_protocol.c</FilePath>
+            </File>
+            <File>
+              <FileName>srv_ring_buffer.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>../Service/srv_ring_buffer.c</FilePath>
+            </File>
+        </Files>
+      </Group>
+    </Groups>
     </Target>
   </Targets>
   <RTE>

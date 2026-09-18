@@ -1,4 +1,9 @@
-# MODULE_INTERFACES.md — 模块接口设计与规范文档
+# 早期模块接口草案
+
+[文档导航](../../README.md) · [归档索引](../README.md)
+
+> 历史资料：保留早期设计推导与当时约定，不代表当前代码或已完成验收。继续开发请阅读[当前状态](../../project-status.md)、[实现架构](../../architecture.md)与[开发约定](../../development.md)。
+
 
 > **设计依据**：  
 > 依据 2026 INVC 嵌入式软件考核要求与系统四层单向依赖架构规范，本文档明确手柄发送端（Sender）与接收端（Receiver）所有功能模块对外暴露的 API 函数原型、数据类型、枚举常量、输入依赖与返回值约定。  
@@ -9,6 +14,7 @@
 ## 一、 跨端通用协议数据结构 (`srv_protocol.h` / `srv_protocol_parser.h`)
 
 ### 1.1 核心数据结构体与常量定义
+
 ```c
 #ifndef __SRV_PROTOCOL_H
 #define __SRV_PROTOCOL_H
@@ -61,6 +67,7 @@ typedef struct {
 ## 二、 手柄发送端 (Sender) 模块接口定义
 
 ### 2.1 应用主控协调器 (`App/app_sender.h`)
+
 * **职责**：手柄系统顶层生命周期调度（上电自检、零偏校准、固定周期采集与协议外发）。
 ```c
 typedef enum {
@@ -76,6 +83,7 @@ app_state_t app_sender_get_state(void);
 ```
 
 ### 2.2 多级 OLED 菜单交互模块 (`App/app_menu.h`)
+
 * **职责**：管理 4 大核心页面状态机，响应按键导航事件，调度底层画点/字符接口渲染。
 ```c
 typedef enum {
@@ -96,6 +104,7 @@ menu_page_t app_menu_get_current_page(void);
 ```
 
 ### 2.3 协议序列化服务 (`Service/srv_protocol.h`)
+
 * **职责**：纯 C 逻辑组帧，序列化遥测结构体，计算累加和。
 ```c
 void     srv_protocol_init(void);
@@ -104,6 +113,7 @@ uint8_t  srv_protocol_calc_checksum(const uint8_t *p_data, uint16_t len);
 ```
 
 ### 2.4 六轴姿态滤波算法服务 (`Service/srv_imu_filter.h`)
+
 * **职责**：纯 C 数学滤波，消除陀螺仪静态漂移，互补/Mahony 滤波融合加速度与角速度，解算欧拉角。**【严禁使用 DMP】**
 ```c
 typedef struct {
@@ -124,6 +134,7 @@ bool srv_imu_filter_is_calibrated(void);
 ```
 
 ### 2.5 轻量环形无锁字节队列 (`Service/srv_ring_buffer.h`)
+
 * **职责**：通用环形队列，隔离中断接收与主循环解析。
 ```c
 typedef struct {
@@ -144,6 +155,7 @@ void     srv_ring_buffer_clear(ring_buffer_t *rb);
 ```
 
 ### 2.6 双轴摇杆驱动 (`BSP/bsp_joystick.h`)
+
 * **职责**：读取 ADC1 DMA 搬运的双通道采样数据，扣除中位零偏，死区滤波，计算真实物理电压与 -1000~1000 归一化值。
 ```c
 typedef struct {
@@ -160,6 +172,7 @@ void bsp_joystick_get_data(joystick_data_t *p_data);
 ```
 
 ### 2.7 独立按键状态机驱动 (`BSP/bsp_key.h`)
+
 * **职责**：4 路独立按键非阻塞消抖，精准识别短按按下、释放、持续 $\ge 2.0\text{s}$ 长按与 300ms 快速双击。
 ```c
 typedef enum {
@@ -186,6 +199,7 @@ uint8_t bsp_key_get_mask(void);
 ```
 
 ### 2.8 拨码开关驱动 (`BSP/bsp_switch.h`)
+
 * **职责**：采样 2 位拨码开关稳态高低电平，提供状态掩码。
 ```c
 typedef enum {
@@ -198,6 +212,7 @@ uint8_t  bsp_switch_get_mask(void);
 ```
 
 ### 2.9 MPU6500 六轴驱动 (`BSP/bsp_imu.h`)
+
 * **职责**：片上硬件 SPI1 主机驱动（PA4~PA7），基于 LibDriver basic 模式读取原始 6 轴加速度计与陀螺仪寄存器补码。**【严禁使用 DMP】**
 ```c
 bool bsp_imu_init(void);
@@ -206,6 +221,7 @@ bool bsp_imu_read_raw(imu_raw_t *p_raw);
 ```
 
 ### 2.10 SSD1306 OLED 显存驱动 (`BSP/bsp_oled.h`)
+
 * **职责**：片上硬件 I2C1 驱动（PB6/PB7，400kHz Fast Mode），管理 1024 字节静态显存，提供全套点阵绘制接口。
 ```c
 #define OLED_WIDTH   (128)
@@ -222,6 +238,7 @@ void bsp_oled_update(void);     /* 将 1KB 静态显存通过硬件 I2C1 刷写�
 ```
 
 ### 2.11 双串口硬件驱动 (`BSP/bsp_usart.h`)
+
 * **职责**：USART1 对接现成无线透明通道（纯硬件外发），USART2 对接 USB 转 TTL 输出诊断调试日志。
 ```c
 typedef enum {
@@ -240,6 +257,7 @@ void     bsp_usart_printf(usart_port_t port, const char *fmt, ...);
 ## 三、 接收端 (Receiver) 模块接口定义
 
 ### 3.1 接收端应用主控协调器 (`App/app_receiver.h`)
+
 * **职责**：接收端顶层运行状态机（等待同步、联机通信、超时离线），调度流式解包，触发 1s 统计与上位机转发。
 ```c
 typedef enum {
@@ -254,13 +272,15 @@ receiver_state_t app_receiver_get_state(void);
 ```
 
 ### 3.2 接收端 OLED 界面排版渲染器 (`App/app_ui.h`)
-* **职责**：排版展示手柄遥测数据、姿态角、1秒滑动窗口通信频率 `Freq: XX Hz` 与实时丢包率 `Loss: X.X %`。
+
+* **职责**：排版展示手柄遥测数据、姿态角、1秒固定窗口通信频率 `Freq: XX Hz` 与实时丢包率 `Loss: X.X %`。
 ```c
 void app_ui_init(void);
 void app_ui_update(const telemetry_payload_t *p_telemetry, float freq_hz, float loss_rate_pct);
 ```
 
 ### 3.3 单字节流式协议解包有限状态机 (`Service/srv_protocol_parser.h`)
+
 * **职责**：纯 C 单字节流式有限状态机，逐字节消费串口缓冲区，具备抗粘包、拆包与抗噪声自动再同步能力。
 ```c
 typedef enum {
@@ -282,12 +302,13 @@ void           srv_protocol_parser_reset(void);
 parser_state_t srv_protocol_parser_get_state(void);
 ```
 
-### 3.4 1秒滑动窗口通信频率与丢包率统计引擎 (`Service/srv_stats.h`)
+### 3.4 1秒固定窗口通信频率与丢包率统计引擎 (`Service/srv_stats.h`)
+
 * **职责**：纯数学统计引擎，维护精确的 1000ms 时间窗口，计算有效包接收频率 $N_{\text{valid}}\text{ Hz}$，基于序列号环形差值求丢包率百分比。
 ```c
 typedef struct {
     float    freq_hz;           /* 即时接收频率 (Hz, 整数或保留1位小数) */
-    float    loss_rate_pct;     /* 过去 1 秒滑动窗口丢包率 (0.0 ~ 100.0 %) */
+    float    loss_rate_pct;     /* 过去 1 秒固定窗口丢包率 (0.0 ~ 100.0 %) */
     uint32_t total_received;    /* 累计接收有效包总数 */
     uint32_t total_lost;        /* 累计丢失包总数 */
 } stats_metrics_t;
@@ -299,6 +320,7 @@ void srv_stats_get_metrics(stats_metrics_t *p_metrics);
 ```
 
 ### 3.5 接收端双串口驱动 (`BSP/bsp_usart.h`)
+
 * **职责**：USART1 接收中断无锁压入环形缓冲区，USART2 负责向 PC 电脑（VOFA+）高速转发推流。
 ```c
 typedef enum {
