@@ -1,6 +1,6 @@
 # 后续硬件验证清单
 
-[文档导航](README.md) · [软件证据](records/2026-09-18-software-verification.md) · [引脚与参数](hardware-configuration.md)
+[文档导航](README.md) · [硬件连接](hardware-connection.md) · [软件证据](records/2026-09-18-software-verification.md) · [引脚与参数](hardware-configuration.md)
 
 **状态：未执行。** 本页把软件模拟覆盖之外的检查整理出来，便于用户之后上板记录；空白结果不代表通过。
 
@@ -10,7 +10,7 @@
 
 | 项目 | 方法与观察点 | 结果 |
 |---|---|---|
-| 外设/引脚一致性 | 对照映射核对 SPI IMU、I2C OLED、摇杆、按键/拨码与两组 UART | 待测 |
+| 外设/引脚一致性 | 对照[硬件引脚连接表](hardware-connection.md)与配置核对 SPI IMU、I2C OLED、摇杆、按键/拨码与两组 UART | 待测 |
 | 启动与校准 | 静止启动，记录 IMU 就绪、CAL 完成、首帧及首 ACK 的时间 | 待测 |
 | 摇杆电压 | PA0/PA1 实测电压与 mv 日志比较，覆盖中心/端点/缓慢移动 | 待测 |
 | 按键与开关 | 单按、释放、≥2 秒长按、双击、三击和开关抖动；核对屏幕与 KEY 日志 | 待测 |

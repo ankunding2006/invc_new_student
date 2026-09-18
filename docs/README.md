@@ -10,7 +10,7 @@
 2. [构建与复测](quick-start.md)：准备工具、运行测试、生成固件。
 3. [操作与上位机](user-guide.md)：菜单按键、串口日志、JustFloat 通道。
 4. [实现架构](architecture.md)：读代码前了解模块、状态机、数据流和恢复行为。
-5. [硬件映射与配置](hardware-configuration.md)与[通信协议](protocol.md)：查引脚、参数、线格式。
+5. [硬件引脚连接](hardware-connection.md)、[硬件映射与配置](hardware-configuration.md)与[通信协议](protocol.md)：查接线、引脚、参数、线格式。
 6. [开发约定](development.md)与[硬件验证清单](hardware-validation.md)：继续开发和后续上板记录。
 
 ## 当前文档各自维护什么
@@ -21,6 +21,7 @@
 | [quick-start.md](quick-start.md) | 构建命令、测试命令、依赖与输出目录 |
 | [user-guide.md](user-guide.md) | 操作步骤、日志字段、PC 通道表与常见现象 |
 | [architecture.md](architecture.md) | 模块职责、入口、时序、数据所有权、故障处理 |
+| [hardware-connection.md](hardware-connection.md) | 双端外设完整引脚连接表、有线直连与电气注意事项 |
 | [hardware-configuration.md](hardware-configuration.md) | 引脚、器件、运行配置及参数修改位置 |
 | [protocol.md](protocol.md) | 遥测/ACK 字节布局、校验、重传、统计定义 |
 | [development.md](development.md) | 分步流程、代码约束、修改后应同步的文档与测试 |

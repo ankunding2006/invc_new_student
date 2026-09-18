@@ -1,6 +1,6 @@
 # 实现架构与运行逻辑
 
-[文档导航](README.md) · [参数配置](hardware-configuration.md) · [通信协议](protocol.md)
+[文档导航](README.md) · [硬件连接](hardware-connection.md) · [参数配置](hardware-configuration.md) · [通信协议](protocol.md)
 
 本文描述已经存在的代码，模块 API 以链接到的头文件为准；早期接口草案位于归档。
 

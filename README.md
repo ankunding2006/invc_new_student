@@ -12,7 +12,7 @@
 | 编译固件、运行软件测试 | [构建与复测](docs/quick-start.md) |
 | 使用按键菜单、查看日志与上位机数据 | [操作与上位机](docs/user-guide.md) |
 | 理解模块、状态机和故障处理 | [实现架构](docs/architecture.md) |
-| 核对引脚、默认参数和 CubeMX 覆盖配置 | [硬件映射与配置](docs/hardware-configuration.md) |
+| 核对接线、引脚、默认参数和 CubeMX 覆盖配置 | [硬件引脚连接](docs/hardware-connection.md) · [硬件映射与配置](docs/hardware-configuration.md) |
 | 对接或修改通信协议 | [通信协议](docs/protocol.md) |
 | 继续开发、准备硬件验证 | [开发约定](docs/development.md) · [硬件验证清单](docs/hardware-validation.md) |
 

@@ -1,12 +1,12 @@
 # 硬件映射与软件配置
 
-[文档导航](README.md) · [实现架构](architecture.md) · [硬件验证](hardware-validation.md)
+[文档导航](README.md) · [硬件连接](hardware-connection.md) · [实现架构](architecture.md) · [硬件验证](hardware-validation.md)
 
-配置来源为当前 Core、BSP 和 Service。表中默认值描述软件设置，不表示硬件已测量达标。
+配置来源为当前 Core、BSP 和 Service。表中默认值描述软件设置，不表示硬件已测量达标。详细的模块引脚物理接线、电气特性与有线直连调试说明见[硬件连接表](hardware-connection.md)。
 
 ## 引脚与器件
 
-两端 MCU 均为 STM32F103C8T6，8 MHz HSE、PLL 到 72 MHz，64 KB Flash、20 KB SRAM。
+两端 MCU 均为 STM32F103C8T6，8 MHz HSE、PLL 到 72 MHz，64 KB Flash、20 KB SRAM。完整模块引脚连线图表可直接查阅[硬件引脚连接表](hardware-connection.md)。
 
 | 功能 | 端 | 外设/引脚 | 当前配置 |
 |---|---|---|---|

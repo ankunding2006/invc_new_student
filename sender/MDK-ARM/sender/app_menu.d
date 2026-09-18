@@ -1,0 +1,13 @@
+sender\app_menu.o: ../App/app_menu.c
+sender\app_menu.o: ../App/app_menu.h
+sender\app_menu.o: C:\Users\34118\AppData\Local\Keil_v5\ARM\ARMCC\Bin\..\include\stdint.h
+sender\app_menu.o: C:\Users\34118\AppData\Local\Keil_v5\ARM\ARMCC\Bin\..\include\stdbool.h
+sender\app_menu.o: ../App/app_sender.h
+sender\app_menu.o: ../Service/srv_protocol.h
+sender\app_menu.o: ../Service/imu_types.h
+sender\app_menu.o: ../Service/srv_input.h
+sender\app_menu.o: ../BSP/bsp_oled.h
+sender\app_menu.o: ../BSP/bsp_joystick.h
+sender\app_menu.o: ../Service/srv_imu_filter.h
+sender\app_menu.o: C:\Users\34118\AppData\Local\Keil_v5\ARM\ARMCC\Bin\..\include\stdio.h
+sender\app_menu.o: C:\Users\34118\AppData\Local\Keil_v5\ARM\ARMCC\Bin\..\include\stdarg.h
