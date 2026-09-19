@@ -60,7 +60,7 @@ void srv_imu_filter_update(const imu_raw_t *r, float dt, imu_euler_t *out)
     }
     if (!calibrated)
     {
-        if (norm < 0.9f || norm > 1.1f || fabsf(g[0]) > 20 || fabsf(g[1]) > 20 || fabsf(g[2]) > 20)
+        if (norm < 0.8f || norm > 1.2f || fabsf(g[0]) > 20 || fabsf(g[1]) > 20 || fabsf(g[2]) > 20)
         {
             samples = 0;
             memset(mean, 0, sizeof(mean));

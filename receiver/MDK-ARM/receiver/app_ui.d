@@ -1,0 +1,10 @@
+receiver\app_ui.o: ../App/app_ui.c
+receiver\app_ui.o: ../App/app_ui.h
+receiver\app_ui.o: C:\Users\34118\AppData\Local\Keil_v5\ARM\ARMCC\Bin\..\include\stdint.h
+receiver\app_ui.o: C:\Users\34118\AppData\Local\Keil_v5\ARM\ARMCC\Bin\..\include\stdbool.h
+receiver\app_ui.o: ../Service/srv_protocol.h
+receiver\app_ui.o: ../App/app_receiver.h
+receiver\app_ui.o: ../Service/srv_stats.h
+receiver\app_ui.o: ../BSP/bsp_oled.h
+receiver\app_ui.o: C:\Users\34118\AppData\Local\Keil_v5\ARM\ARMCC\Bin\..\include\stdio.h
+receiver\app_ui.o: C:\Users\34118\AppData\Local\Keil_v5\ARM\ARMCC\Bin\..\include\stdarg.h
