@@ -1,0 +1,101 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "Debug Sender (DAPLink)",
+            "type": "cortex-debug",
+            "request": "launch",
+            "cwd": "${workspaceFolder}/sender",
+            "executable": "${workspaceFolder}/sender/build/Debug/sender.elf",
+            "servertype": "openocd",
+            "configFiles": [
+                "interface/cmsis-dap.cfg",
+                "target/stm32f1x.cfg"
+            ],
+            "runToEntryPoint": "main",
+            "showDevDebugOutput": "raw",
+            "svdFile": "${workspaceFolder}/STM32F103xx.svd",
+            "preLaunchTask": "Build Sender (Debug)"
+        },
+        {
+            "name": "Debug Receiver (DAPLink)",
+            "type": "cortex-debug",
+            "request": "launch",
+            "cwd": "${workspaceFolder}/receiver",
+            "executable": "${workspaceFolder}/receiver/build/Debug/receiver.elf",
+            "servertype": "openocd",
+            "configFiles": [
+                "interface/cmsis-dap.cfg",
+                "target/stm32f1x.cfg"
+            ],
+            "runToEntryPoint": "main",
+            "showDevDebugOutput": "raw",
+            "svdFile": "${workspaceFolder}/STM32F103xx.svd",
+            "preLaunchTask": "Build Receiver (Debug)"
+        },
+        {
+            "name": "Debug Sender (ST-LINK)",
+            "type": "cortex-debug",
+            "request": "launch",
+            "cwd": "${workspaceFolder}/sender",
+            "executable": "${workspaceFolder}/sender/build/Debug/sender.elf",
+            "servertype": "openocd",
+            "configFiles": [
+                "interface/stlink.cfg",
+                "target/stm32f1x.cfg"
+            ],
+            "runToEntryPoint": "main",
+            "showDevDebugOutput": "raw",
+            "svdFile": "${workspaceFolder}/STM32F103xx.svd",
+            "preLaunchTask": "Build Sender (Debug)"
+        },
+        {
+            "name": "Debug Receiver (ST-LINK)",
+            "type": "cortex-debug",
+            "request": "launch",
+            "cwd": "${workspaceFolder}/receiver",
+            "executable": "${workspaceFolder}/receiver/build/Debug/receiver.elf",
+            "servertype": "openocd",
+            "configFiles": [
+                "interface/stlink.cfg",
+                "target/stm32f1x.cfg"
+            ],
+            "runToEntryPoint": "main",
+            "showDevDebugOutput": "raw",
+            "svdFile": "${workspaceFolder}/STM32F103xx.svd",
+            "preLaunchTask": "Build Receiver (Debug)"
+        },
+        {
+            "name": "Debug Sender [Release] (DAPLink)",
+            "type": "cortex-debug",
+            "request": "launch",
+            "cwd": "${workspaceFolder}/sender",
+            "executable": "${workspaceFolder}/sender/build/Release/sender.elf",
+            "servertype": "openocd",
+            "configFiles": [
+                "interface/cmsis-dap.cfg",
+                "target/stm32f1x.cfg"
+            ],
+            "runToEntryPoint": "main",
+            "showDevDebugOutput": "raw",
+            "svdFile": "${workspaceFolder}/STM32F103xx.svd",
+            "preLaunchTask": "Build Sender (Release)"
+        },
+        {
+            "name": "Debug Receiver [Release] (DAPLink)",
+            "type": "cortex-debug",
+            "request": "launch",
+            "cwd": "${workspaceFolder}/receiver",
+            "executable": "${workspaceFolder}/receiver/build/Release/receiver.elf",
+            "servertype": "openocd",
+            "configFiles": [
+                "interface/cmsis-dap.cfg",
+                "target/stm32f1x.cfg"
+            ],
+            "runToEntryPoint": "main",
+            "showDevDebugOutput": "raw",
+            "svdFile": "${workspaceFolder}/STM32F103xx.svd",
+            "preLaunchTask": "Build Receiver (Release)"
+        }
+    ]
+}

@@ -1,0 +1,70 @@
+{
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "Build Sender (Debug)",
+            "type": "shell",
+            "command": "cmake --build --preset Debug",
+            "options": {
+                "cwd": "${workspaceFolder}/sender"
+            },
+            "group": {
+                "kind": "build",
+                "isDefault": false
+            },
+            "problemMatcher": "$gcc"
+        },
+        {
+            "label": "Build Receiver (Debug)",
+            "type": "shell",
+            "command": "cmake --build --preset Debug",
+            "options": {
+                "cwd": "${workspaceFolder}/receiver"
+            },
+            "group": {
+                "kind": "build",
+                "isDefault": false
+            },
+            "problemMatcher": "$gcc"
+        },
+        {
+            "label": "Build Sender (Release)",
+            "type": "shell",
+            "command": "cmake --build --preset Release",
+            "options": {
+                "cwd": "${workspaceFolder}/sender"
+            },
+            "group": {
+                "kind": "build",
+                "isDefault": false
+            },
+            "problemMatcher": "$gcc"
+        },
+        {
+            "label": "Build Receiver (Release)",
+            "type": "shell",
+            "command": "cmake --build --preset Release",
+            "options": {
+                "cwd": "${workspaceFolder}/receiver"
+            },
+            "group": {
+                "kind": "build",
+                "isDefault": false
+            },
+            "problemMatcher": "$gcc"
+        },
+        {
+            "label": "Build All Firmware (Release)",
+            "type": "shell",
+            "command": "python tools/build_firmware.py",
+            "options": {
+                "cwd": "${workspaceFolder}"
+            },
+            "group": {
+                "kind": "build",
+                "isDefault": true
+            },
+            "problemMatcher": "$gcc"
+        }
+    ]
+}
