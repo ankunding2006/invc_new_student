@@ -6,7 +6,7 @@
 
 ## 分层与数据流
 
-App 组织任务和页面；Service 提供协议、输入处理、滤波与统计；BSP 对接 HAL 外设。Core 保留 CubeMX 初始化和中断入口，Drivers 为 ST 库。Service 不依赖 HAL；BSP 的采集适配可复用纯输入服务，不应简单理解为所有头文件都只能沿一条直线依赖。
+App 使用 C++17 类组织任务、私有状态和页面；Service 提供协议、输入处理、滤波与统计；BSP 对接 HAL 外设。Core 保留 CubeMX 初始化和中断入口，Drivers 为 ST 库。Service 不依赖 HAL；BSP 的采集适配可复用纯输入服务，不应简单理解为所有头文件都只能沿一条直线依赖。
 
 ```mermaid
 flowchart LR
@@ -42,9 +42,22 @@ flowchart LR
 
 两端共用逻辑在各自工程中保留独立文件副本；修改协议、配置、UART/OLED 等共用实现时应同步核对。接收 App 使用通用带时间参数的 `protocol_parser_feed`，旧 `srv_protocol_parser` 包装接口保留兼容，不是主业务解析入口。
 
+## C++ 应用与 C 边界
+
+| 应用对象 | C++ 定义 | 保留的 C 入口 |
+|---|---|---|
+| SenderApplication | [sender_application.hpp](../sender/App/sender_application.hpp) | app_sender_init/task/view 等 |
+| SenderMenu | [sender_menu.hpp](../sender/App/sender_menu.hpp) | app_menu_init/render/action 等 |
+| ReceiverApplication | [receiver_application.hpp](../receiver/App/receiver_application.hpp) | app_receiver_init/task/telemetry 等 |
+| ReceiverUi | [receiver_ui.hpp](../receiver/App/receiver_ui.hpp) | app_ui_init/update |
+
+原文件内静态状态迁入类的私有成员；ReceiverUi 原来无持久状态，仍无新增业务状态。每个模块在静态区有一个零初始化实例，由同名 accessor 返回引用。对象不在构造时调用 HAL，原 init 仍在 Core 的硬件初始化之后执行；不能认为类封装后即可支持多个独立硬件实例，底层 C 服务仍有模块级状态。
+
+main.c 和测试 sim_api.c 保留原调用，通过 extern "C" 桥接到对象方法。旧 app_*.h 是兼容 ABI；新 .hpp 是 C++ 接口。原逻辑、调用次序和计时读点没有改写，详见[迁移说明](cpp-migration.md)。
+
 ## 状态与任务
 
-发送端状态来自 [app_sender.c](../sender/App/app_sender.c)：
+发送端状态来自 [SenderApplication](../sender/App/sender_application.cpp)：
 
 | 状态 | 进入条件与退出方向 |
 |---|---|
@@ -89,11 +102,11 @@ stateDiagram-v2
 | OLED 显存 | 主循环绘制 → 主循环页发送 | 静态 `gram[8][128]`，按硬件页连续存储 |
 | 事件日志 | 主循环入队 → UART2 | 固定 31 项有效容量，溢出累计可见 |
 
-ADC 平均期间若跨越 DMA 边界，沿用上次一致样本；真实 ADC 故障仍标记未就绪。业务不调用动态内存分配，1 KB 显存不放在局部栈。
+ADC 平均期间若跨越 DMA 边界，沿用上次一致样本；真实 ADC 故障仍标记未就绪。业务不调用动态内存分配，1 KB 显存不放在局部栈。C++ 类不使用虚函数、异常或 RTTI，静态断言限制为平凡构造/析构；原 C 服务与 HAL 不改为 C++ 编译。
 
 ## 姿态解算
 
-MPU6500 输出原始加速度与角速度，BSP 先按配置映射 XYZ。服务层检查静止条件，累计 100 个合格样本计算陀螺零偏；有运动或方差不合格时重新开始。初始化姿态使用加速度倾角，随后积分四元数，并在加速度模长接近 1g 时作重力方向校正。
+MPU6500 输出原始加速度与角速度，BSP 先按配置映射 XYZ。服务层按用户当前基线的 0.8～1.2g 模长范围及角速度/方差条件检查静止，累计 100 个合格样本计算陀螺零偏；有运动或方差不合格时重新开始。初始化姿态使用加速度倾角，随后积分四元数，并在加速度模长接近 1g 时作重力方向校正。
 
 更新使用实际 `dt_s`；无效 dt、归一化与三角函数输入边界均受保护。Pitch/Roll 有重力参考，Yaw 没有磁力计绝对参考，会随积分误差漂移。原始倾角与滤波输出提供给日志做对比，实物滤波参数优化仍需采样验证。
 

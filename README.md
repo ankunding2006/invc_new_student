@@ -2,7 +2,7 @@
 
 基于两套 STM32F103C8T6，实现摇杆、按键、拨码和六轴姿态采集，经自定义协议通过透明无线串口发送，在接收端显示并转发至 PC。
 
-**当前进度：⑪～⑭ 软件实现与模拟联调已完成。** 两端 GNU Arm 编译链接和主机测试已通过；硬件联调、精度与实时性验收尚未执行。详情见[项目状态](docs/project-status.md)。
+**当前进度（2026-10-04）：已完成应用层 C++17 封装，底层 C 实现保留。** 用户反馈重构前的基线已完成几乎全部硬件功能测试且正常；本次完成主机行为对照与双端 CMake Debug/Release 构建，没有重新烧录或进行硬件测试。详情见[项目状态](docs/project-status.md)与[C++ 迁移说明](docs/cpp-migration.md)。
 
 ## 从这里开始
 
@@ -11,6 +11,7 @@
 | 第一次了解项目或查找资料 | [文档导航](docs/README.md) |
 | 编译固件、运行软件测试 | [构建与复测](docs/quick-start.md) |
 | 使用按键菜单、查看日志与上位机数据 | [操作与上位机](docs/user-guide.md) |
+| 了解 C++ 封装与 C 接口边界 | [C++ 迁移说明](docs/cpp-migration.md) |
 | 理解模块、状态机和故障处理 | [实现架构](docs/architecture.md) |
 | 核对接线、引脚、默认参数和 CubeMX 覆盖配置 | [硬件引脚连接](docs/hardware-connection.md) · [硬件映射与配置](docs/hardware-configuration.md) |
 | 对接或修改通信协议 | [通信协议](docs/protocol.md) |
@@ -18,21 +19,21 @@
 
 ## 快速复测
 
-在项目根目录执行；需要 Python 3、主机 GCC 和 GNU Arm 工具加入 PATH：
+在项目根目录执行；需要 Python 3、CMake、Ninja、主机 GCC/G++ 和 GNU Arm GCC/G++ 加入 PATH：
 
 ```powershell
 python tests/run_tests.py
 python tools/build_firmware.py
 ```
 
-脚本不烧录硬件。测试产物位于 `build/tests/`；固件位于 `build/firmware/sender/` 与 `build/firmware/receiver/`。环境准备、Keil 状态及产物说明见[构建与复测](docs/quick-start.md)。
+脚本不烧录硬件。测试产物位于 `build/tests/`；固件位于 `build/firmware/sender/` 与 `build/firmware/receiver/`。CMake/VS Code 使用及产物说明见[构建与复测](docs/quick-start.md)。
 
 ## 目录概览
 
 ```text
 project/
-├── sender/                 # 发送端：App / Service / BSP / Core / Drivers
-├── receiver/               # 接收端：App / Service / BSP / Core / Drivers
+├── sender/                 # 发送端：C++ App / C Service、BSP、Core、Drivers
+├── receiver/               # 接收端：C++ App / C Service、BSP、Core、Drivers
 ├── tests/                  # 主机逻辑、HAL 模拟与双端集成测试
 ├── tools/                  # GNU Arm 构建与链接配置
 ├── docs/                   # 当前文档、验证记录、历史设计

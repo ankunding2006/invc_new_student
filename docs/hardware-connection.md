@@ -35,7 +35,7 @@
 | **无线串口透传模块**<br>(双向遥测/ACK) | VCC | 3.3V / 5V | 供电电源 | 依无线透传模块规格供电 | [bsp_usart.c](../sender/BSP/bsp_usart.c)<br>[usart.c](../sender/Core/Src/usart.c) |
 | | GND | GND | 电源地 | 与主控板共地 | |
 | | RXD | **PA9** | USART1_TX (复用推挽) | 115200 8N1，向无线模块发送 23 字节遥测数据帧 | |
-| | TXD | **PA10** | USART1_RX (浮空输入) | 115200 8N1，接收来自对端的 6 字节 ACK 响应帧 | |
+| | TXD | **PA10** | USART1_RX (浮空输入) | 115200 8N1，接收来自对端的 9 字节 ACK 响应帧 | |
 | **USB 转 TTL 模块**<br>(手柄端调试串口) | GND | GND | 电源地 | 必须共地 | [usart.c](../sender/Core/Src/usart.c) |
 | | RXD | **PA2** | USART2_TX (复用推挽) | 115200 8N1，向 PC 输出约 10 Hz 文本采样日志与按键事件 | |
 | | TXD | **PA3** | USART2_RX (浮空输入) | 115200 8N1，调试接收口（保留备用） | |
@@ -56,7 +56,7 @@
 | | SDA | **PB7** | I2C1_SDA (复用开漏) | 硬件 I2C1 Fast Mode 400 kHz | |
 | **无线串口透传模块**<br>(双向遥测/ACK) | VCC | 3.3V / 5V | 供电电源 | 依无线透传模块规格供电 | [bsp_usart.c](../receiver/BSP/bsp_usart.c)<br>[usart.c](../receiver/Core/Src/usart.c) |
 | | GND | GND | 电源地 | 与主控板共地 | |
-| | RXD | **PA9** | USART1_TX (复用推挽) | 115200 8N1，向无线模块发送 6 字节 ACK 响应帧 | |
+| | RXD | **PA9** | USART1_TX (复用推挽) | 115200 8N1，向无线模块发送 9 字节 ACK 响应帧 | |
 | | TXD | **PA10** | USART1_RX (浮空输入) | 115200 8N1，接收来自手柄端的 23 字节遥测数据帧 | |
 | **USB 转 TTL 模块**<br>(上位机 / VOFA+) | GND | GND | 电源地 | 必须共地 | [srv_pc.h](../receiver/Service/srv_pc.h)<br>[usart.c](../receiver/Core/Src/usart.c) |
 | | RXD | **PA2** | USART2_TX (复用推挽) | 115200 8N1，默认输出 14 通道 JustFloat（可切为文本 R/STAT） | |

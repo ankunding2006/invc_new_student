@@ -1,6 +1,6 @@
 """Run the software-only suite: ring buffers, pure logic, mocked drivers/apps/link.
 Usage: python tests/run_tests.py [--build-dir PATH]
-Requirements: Python 3, host GCC. Windows DLL simulations use ctypes.
+Requirements: Python 3, host GCC and G++ (C++17). Windows DLL simulations use ctypes.
 No board is flashed; no serial port is opened.
 """
 from pathlib import Path

@@ -4,6 +4,8 @@
 
 当前文档按使用、实现和维护任务组织；带日期的记录保存当时证据，归档保留早期推导。
 
+当前为 C++17 应用层 + C 服务/驱动工程，构建使用用户现有 CMake/VS Code。新增入口：[C++ 迁移说明](cpp-migration.md) · [行为与资源对照](records/2026-10-04-cpp-refactor.md)。
+
 ## 推荐阅读顺序
 
 1. [项目状态与需求对应](project-status.md)：系统做什么、软件完成到哪里、哪些还没验证。
@@ -20,6 +22,7 @@
 | [project-status.md](project-status.md) | 当前完成情况、题目需求到实现/证据的对应 |
 | [quick-start.md](quick-start.md) | 构建命令、测试命令、依赖与输出目录 |
 | [user-guide.md](user-guide.md) | 操作步骤、日志字段、PC 通道表与常见现象 |
+| [cpp-migration.md](cpp-migration.md) | 应用对象、C ABI、文件迁移与行为等价验证 |
 | [architecture.md](architecture.md) | 模块职责、入口、时序、数据所有权、故障处理 |
 | [hardware-connection.md](hardware-connection.md) | 双端外设完整引脚连接表、有线直连与电气注意事项 |
 | [hardware-configuration.md](hardware-configuration.md) | 引脚、器件、运行配置及参数修改位置 |
@@ -28,6 +31,8 @@
 | [hardware-validation.md](hardware-validation.md) | 待验证项目、观察方法和实测记录格式 |
 
 ## 验证与历史
+
+- [2026-10-04 C++ 重构记录](records/2026-10-04-cpp-refactor.md)：当前 C 基线、原测试、行为对照及 CMake 资源变化。
 
 - [2026-09-17 代码核查](records/2026-09-17-code-review.md)：实现前发现的问题及当时修复。
 - [2026-09-18 软件实现与验证](records/2026-09-18-software-verification.md)：⑪～⑭ 实现、测试场景、资源占用与限制。

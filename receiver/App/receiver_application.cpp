@@ -1,3 +1,6 @@
+#include "receiver_application.hpp"
+extern "C"
+{
 #include "app_receiver.h"
 #include "app_ui.h"
 #include "srv_pc.h"
@@ -5,28 +8,38 @@
 #include "bsp_oled.h"
 #include "bsp_usart.h"
 #include "main.h"
+}
 #include <string.h>
 #include <stdio.h>
-static receiver_state_t state;
-static protocol_parser_t parser;
-static telemetry_payload_t telemetry;
-static stats_metrics_t metrics;
-static uint32_t last_packet, stats_tick, slice_tick, rx_errors, pc_drops;
-static uint8_t slice_interval, last_seq, ack[9];
-static bool ack_pending, text_mode, stats_log_pending;
-const telemetry_payload_t *app_receiver_telemetry(void)
+#include <type_traits>
+
+namespace invc::receiver
+{
+namespace
+{
+// Zero-initialized static storage preserves the original C startup state.
+static_assert(std::is_trivially_default_constructible_v<ReceiverApplication>);
+static_assert(std::is_trivially_destructible_v<ReceiverApplication>);
+ReceiverApplication instance{};
+} // namespace
+ReceiverApplication &receiver_application() noexcept
+{
+    return instance;
+}
+
+const telemetry_payload_t *ReceiverApplication::snapshot(void)
 {
     return &telemetry;
 }
-receiver_state_t app_receiver_get_state(void)
+receiver_state_t ReceiverApplication::current_state(void)
 {
     return state;
 }
-uint32_t app_receiver_pc_drops(void)
+uint32_t ReceiverApplication::forwarding_drops(void)
 {
     return pc_drops;
 }
-static bool forward(void)
+bool ReceiverApplication::forward(void)
 {
     uint8_t output[192];
     uint16_t len;
@@ -52,7 +65,7 @@ static bool forward(void)
     }
     return len != 0;
 }
-void app_receiver_init(void)
+void ReceiverApplication::init(void)
 {
     state = RECEIVER_STATE_WAIT_SYNC;
     memset(&telemetry, 0, sizeof telemetry);
@@ -68,14 +81,14 @@ void app_receiver_init(void)
     ack_pending = text_mode = stats_log_pending = false;
     last_seq = 0;
 }
-static bool valid_payload(const telemetry_payload_t *p)
+bool ReceiverApplication::valid_payload(const telemetry_payload_t *p)
 {
     return p->joy_x_raw >= -1000 && p->joy_x_raw <= 1000 && p->joy_y_raw >= -1000 &&
            p->joy_y_raw <= 1000 && p->joy_x_mv <= 3300 && p->joy_y_mv <= 3300 &&
            p->switch_mask <= 3 && p->pitch_cd >= -1800 && p->pitch_cd <= 1800 &&
            p->roll_cd >= -1800 && p->roll_cd <= 1800 && p->yaw_cd >= 0 && p->yaw_cd <= 3600;
 }
-void app_receiver_task(void)
+void ReceiverApplication::task(void)
 {
     bool published = false;
     uint32_t now = HAL_GetTick();
@@ -173,4 +186,31 @@ void app_receiver_task(void)
             app_ui_update(&telemetry, metrics.freq_hz, metrics.loss_rate_pct);
         bsp_oled_update_slice();
     }
+}
+
+} // namespace invc::receiver
+
+extern "C" void app_receiver_init(void)
+{
+    invc::receiver::receiver_application().init();
+}
+
+extern "C" void app_receiver_task(void)
+{
+    invc::receiver::receiver_application().task();
+}
+
+extern "C" receiver_state_t app_receiver_get_state(void)
+{
+    return invc::receiver::receiver_application().current_state();
+}
+
+extern "C" const telemetry_payload_t *app_receiver_telemetry(void)
+{
+    return invc::receiver::receiver_application().snapshot();
+}
+
+extern "C" uint32_t app_receiver_pc_drops(void)
+{
+    return invc::receiver::receiver_application().forwarding_drops();
 }

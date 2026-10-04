@@ -1,3 +1,6 @@
+#include "sender_application.hpp"
+extern "C"
+{
 #include "app_sender.h"
 #include "app_menu.h"
 #include "srv_link.h"
@@ -10,26 +13,27 @@
 #include "bsp_oled.h"
 #include "bsp_usart.h"
 #include "main.h"
+}
 #include <string.h>
 #include <math.h>
 #include <stdio.h>
-static sender_view_t view;
-static link_tx_t link;
-static protocol_parser_t ack_parser;
-static uint32_t key_tick, sample_tick, slice_tick, debug_tick, filter_tick, rx_errors;
-static uint32_t boot_tick;
-static uint32_t tx_base, ack_base, retry_base, expired_base;
-static bool imu_was_ready;
-static uint8_t slice_interval;
-/* Main-context event log queue: keep distinct PRESS/RELEASE/LONG/DOUBLE records. */
-static struct
+#include <type_traits>
+
+namespace invc::sender
 {
-    key_msg_t key;
-    uint32_t tick;
-} event_log[32];
-static uint8_t event_head, event_tail;
-static uint32_t event_drops;
-static void log_key(key_msg_t key, uint32_t now)
+namespace
+{
+// Zero-initialized static storage preserves the original C startup state.
+static_assert(std::is_trivially_default_constructible_v<SenderApplication>);
+static_assert(std::is_trivially_destructible_v<SenderApplication>);
+SenderApplication instance{};
+} // namespace
+SenderApplication &sender_application() noexcept
+{
+    return instance;
+}
+
+void SenderApplication::log_key(key_msg_t key, uint32_t now)
 {
     uint8_t next = (uint8_t)((event_head + 1U) % 32U);
     if (next == event_tail)
@@ -41,7 +45,7 @@ static void log_key(key_msg_t key, uint32_t now)
     event_log[event_head].tick = now;
     event_head = next;
 }
-static void drain_key_log(void)
+void SenderApplication::drain_key_log(void)
 {
     if (event_head == event_tail || !bsp_usart_tx_ready(USART_PORT_DEBUG))
         return;
@@ -56,11 +60,11 @@ static void drain_key_log(void)
         bsp_usart_transmit(USART_PORT_DEBUG, (const uint8_t *)line, (uint16_t)n))
         event_tail = (uint8_t)((event_tail + 1U) % 32U);
 }
-static bool radio_send(const uint8_t *p, uint16_t n)
+bool SenderApplication::radio_send(const uint8_t *p, uint16_t n)
 {
     return bsp_usart_transmit(USART_PORT_WIRELESS, p, n);
 }
-static bool due(uint32_t now, uint32_t *last, uint32_t period)
+bool SenderApplication::due(uint32_t now, uint32_t *last, uint32_t period)
 {
     if ((uint32_t)(now - *last) < period)
         return false;
@@ -68,33 +72,33 @@ static bool due(uint32_t now, uint32_t *last, uint32_t period)
     *last += ((uint32_t)(now - *last) / period) * period;
     return true;
 }
-void app_sender_recalibrate(void)
+void SenderApplication::recalibrate(void)
 {
     srv_imu_filter_calibrate_gyro();
     view.state = APP_STATE_CALIBRATING;
     memset(&view.euler, 0, sizeof(view.euler));
     filter_tick = HAL_GetTick();
 }
-void app_sender_reset_tx_count(void)
+void SenderApplication::reset_tx_count(void)
 {
     tx_base = link.total_tx;
     ack_base = link.total_acked;
     retry_base = link.total_retry;
     expired_base = link.total_expired;
 }
-void app_sender_reset_events(void)
+void SenderApplication::reset_events(void)
 {
     view.events = 0;
 }
-const sender_view_t *app_sender_view(void)
+const sender_view_t *SenderApplication::snapshot(void)
 {
     return &view;
 }
-app_state_t app_sender_get_state(void)
+app_state_t SenderApplication::current_state(void)
 {
     return view.state;
 }
-void app_sender_init(void)
+void SenderApplication::init(void)
 {
     memset(&view, 0, sizeof(view));
     view.state = APP_STATE_INIT;
@@ -117,7 +121,7 @@ void app_sender_init(void)
     rx_errors = 0;
     tx_base = ack_base = retry_base = expired_base = 0;
 }
-static int16_t angle10(float a)
+int16_t SenderApplication::angle10(float a)
 {
     if (!isfinite(a))
         return 0;
@@ -128,7 +132,7 @@ static int16_t angle10(float a)
         v = -32768;
     return (int16_t)(v + (v < 0 ? -0.5f : 0.5f));
 }
-static void sample_and_send(uint32_t now)
+void SenderApplication::sample_and_send(uint32_t now)
 {
     joystick_data_t joy;
     bsp_joystick_get_data(&joy);
@@ -138,7 +142,7 @@ static void sample_and_send(uint32_t now)
     view.telemetry.joy_y_mv = joy.y_voltage_mv;
     bool ready = bsp_imu_get_status() == IMU_STATUS_OK;
     if (ready && !imu_was_ready)
-        app_sender_recalibrate();
+        recalibrate();
     imu_was_ready = ready;
     if (ready && bsp_imu_read_raw(&view.raw))
     {
@@ -177,7 +181,7 @@ static void sample_and_send(uint32_t now)
     if ((uint32_t)(now - boot_tick) >= LINK_STARTUP_QUIET_MS)
         (void)srv_link_submit(&link, &view.telemetry, now);
 }
-void app_sender_task(void)
+void SenderApplication::task(void)
 {
     uint32_t now = HAL_GetTick();
     bsp_usart_service(now);
@@ -258,4 +262,41 @@ void app_sender_task(void)
             app_menu_render();
         bsp_oled_update_slice();
     }
+}
+
+} // namespace invc::sender
+
+extern "C" void app_sender_init(void)
+{
+    invc::sender::sender_application().init();
+}
+
+extern "C" void app_sender_task(void)
+{
+    invc::sender::sender_application().task();
+}
+
+extern "C" app_state_t app_sender_get_state(void)
+{
+    return invc::sender::sender_application().current_state();
+}
+
+extern "C" const sender_view_t *app_sender_view(void)
+{
+    return invc::sender::sender_application().snapshot();
+}
+
+extern "C" void app_sender_recalibrate(void)
+{
+    invc::sender::sender_application().recalibrate();
+}
+
+extern "C" void app_sender_reset_tx_count(void)
+{
+    invc::sender::sender_application().reset_tx_count();
+}
+
+extern "C" void app_sender_reset_events(void)
+{
+    invc::sender::sender_application().reset_events();
 }

@@ -1,12 +1,30 @@
+#include "sender_menu.hpp"
+extern "C"
+{
 #include "app_menu.h"
 #include "app_sender.h"
 #include "bsp_oled.h"
 #include "bsp_joystick.h"
 #include "srv_imu_filter.h"
+}
 #include <stdio.h>
 #include <stdarg.h>
-static menu_page_t selected;
-static bool detail;
+#include <type_traits>
+
+namespace invc::sender
+{
+namespace
+{
+// Zero-initialized static storage preserves the original C startup state.
+static_assert(std::is_trivially_default_constructible_v<SenderMenu>);
+static_assert(std::is_trivially_destructible_v<SenderMenu>);
+SenderMenu instance{};
+} // namespace
+SenderMenu &sender_menu() noexcept
+{
+    return instance;
+}
+
 static const char *titles[4] = {"Joystick", "Keys / Switches", "Attitude", "Communication"};
 static void row(unsigned y, const char *fmt, ...)
 {
@@ -17,20 +35,20 @@ static void row(unsigned y, const char *fmt, ...)
     va_end(a);
     bsp_oled_show_string(0, (uint8_t)y, text, 12, 1);
 }
-void app_menu_init(void)
+void SenderMenu::init(void)
 {
     selected = MENU_PAGE_JOYSTICK;
     detail = false;
 }
-void app_menu_navigate_up(void)
+void SenderMenu::navigate_up(void)
 {
     selected = (menu_page_t)((selected + MENU_PAGE_COUNT - 1) % MENU_PAGE_COUNT);
 }
-void app_menu_navigate_down(void)
+void SenderMenu::navigate_down(void)
 {
     selected = (menu_page_t)((selected + 1) % MENU_PAGE_COUNT);
 }
-void app_menu_action_enter(void)
+void SenderMenu::enter(void)
 {
     if (!detail)
     {
@@ -52,24 +70,24 @@ void app_menu_action_enter(void)
         break;
     }
 }
-void app_menu_action_long(void)
+void SenderMenu::long_press(void)
 {
     if (detail && selected == MENU_PAGE_ATTITUDE)
         app_sender_recalibrate();
 }
-void app_menu_action_back(void)
+void SenderMenu::back(void)
 {
     detail = false;
 }
-menu_page_t app_menu_get_current_page(void)
+menu_page_t SenderMenu::current_page(void)
 {
     return selected;
 }
-bool app_menu_in_detail(void)
+bool SenderMenu::in_detail(void)
 {
     return detail;
 }
-void app_menu_render(void)
+void SenderMenu::render(void)
 {
     bsp_oled_clear();
     const sender_view_t *v = app_sender_view();
@@ -123,4 +141,51 @@ void app_menu_render(void)
         selected = MENU_PAGE_JOYSTICK;
         break;
     }
+}
+
+} // namespace invc::sender
+
+extern "C" void app_menu_init(void)
+{
+    invc::sender::sender_menu().init();
+}
+
+extern "C" void app_menu_navigate_up(void)
+{
+    invc::sender::sender_menu().navigate_up();
+}
+
+extern "C" void app_menu_navigate_down(void)
+{
+    invc::sender::sender_menu().navigate_down();
+}
+
+extern "C" void app_menu_action_enter(void)
+{
+    invc::sender::sender_menu().enter();
+}
+
+extern "C" void app_menu_action_back(void)
+{
+    invc::sender::sender_menu().back();
+}
+
+extern "C" void app_menu_action_long(void)
+{
+    invc::sender::sender_menu().long_press();
+}
+
+extern "C" void app_menu_render(void)
+{
+    invc::sender::sender_menu().render();
+}
+
+extern "C" menu_page_t app_menu_get_current_page(void)
+{
+    return invc::sender::sender_menu().current_page();
+}
+
+extern "C" bool app_menu_in_detail(void)
+{
+    return invc::sender::sender_menu().in_detail();
 }

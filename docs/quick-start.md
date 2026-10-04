@@ -1,66 +1,82 @@
-# 构建与复测
+# CMake 构建与复测
 
-[文档导航](README.md) · [当前验证记录](records/2026-09-18-software-verification.md)
+[文档导航](README.md) · [C++ 迁移说明](cpp-migration.md) · [本次验证](records/2026-10-04-cpp-refactor.md)
 
-## 环境准备
+## 环境与实际构建入口
 
-| 工具 | 用途 | 是否必需 |
-|---|---|---|
-| Python 3 | 运行测试和构建脚本 | 是 |
-| 主机 GCC（Windows MSYS2 UCRT64） | 编译主机测试和 ctypes 模拟 DLL | 软件测试需要 |
-| GNU Arm Embedded 工具链 | `arm-none-eabi-gcc`、`objcopy`、`size` | 固件构建需要 |
-| Pillow | 从应用显存生成 OLED 图片 | 可选 |
-| Keil MDK | 使用原 `.uvprojx` 工程 | 可选，本次未实编译验证 |
+当前使用 VS Code + CMake + Ninja + GNU Arm 工具链，不再以 Keil 为编译/下载/调试入口。本次沿用用户配置，未修改 `.vscode/`、Presets、工具链、启动文件或链接脚本。
 
-主机测试目前使用 Windows DLL，不应当作已经验证过 Linux/macOS 兼容性。先在 PowerShell 检查工具：
+| 工具 | 用途 |
+|---|---|
+| Python 3 | 构建包装脚本、主机测试与行为对照 |
+| CMake ≥3.22、Ninja | 根工作区调度与 sender/receiver 独立构建 |
+| arm-none-eabi-gcc / g++ / objcopy / size | C/C++/ASM 固件编译链接与产物转换 |
+| 主机 GCC / G++ | C99 测试、C++17 App、Windows ctypes DLL |
+| Pillow | 可选的 OLED 显存预览 |
+| 已配置的 Cortex-Debug / OpenOCD | 用户在 VS Code 中下载调试；本次未连接设备 |
+
+以上命令需在终端 PATH 可用。交叉工具链负责 MCU，主机 GCC/G++ 负责模拟，两者不能替代。本次交叉工具链为 STM32CubeCLT 1.17.0 自带 GNU 12.3.1。业务 C++17 关闭异常/RTTI/线程安全局部静态初始化；C 生成代码仍按原 C11 配置编译。
+
+## 推荐：从根目录构建两端
 
 ```powershell
-python --version
-gcc --version
-arm-none-eabi-gcc --version
-arm-none-eabi-objcopy --version
-arm-none-eabi-size --version
+# 默认 Release，生成并收集两端固件
+python tools/build_firmware.py
+
+# Debug，可另选收集目录以保留 Release 产物
+python tools/build_firmware.py --config Debug --out build/firmware-debug
 ```
 
-若提示找不到命令，将对应工具的 `bin` 目录加入 PATH 后重新打开终端。主机 GCC 和交叉 GCC 用途不同，不能相互代替。
+[包装脚本](../tools/build_firmware.py)已由用户改为调用各端 CMake Presets，本次保持其行为。编译实际发生在 `sender/build/<配置>/`、`receiver/build/<配置>/`；`--out` 只改变 ELF/HEX/BIN/MAP 的复制目录，不会搬移 CMake 缓存。默认收集路径 `build/firmware/` 若连续构建不同配置会被后一次覆盖。
 
-## 执行完整检查
+## 直接使用 CMake
 
-在项目根目录执行（Python 3，主机 GCC 与 GNU Arm 工具需在 PATH）：
+从项目根目录构建两个子工程：
+
+```powershell
+cmake --preset Release
+cmake --build --preset Release
+```
+
+根项目为调度层，`sender`、`receiver` 为独立目标，`all_firmware` 默认构建两端。根 Preset 不直接编译固件源码。只构建某一端时，进入对应目录执行：
+
+```powershell
+cd sender
+cmake --preset Debug
+cmake --build --preset Debug
+```
+
+接收端同理。应用源文件清单位于双方 `CMakeLists.txt`，CubeMX 内容位于各自 `cmake/stm32cubemx/`；新增 App 源文件需要登记，不能依赖通配发现。
+
+如果移动过项目目录，CMake 报缓存路径与当前源目录不一致，可在报错的根目录或端目录执行 `cmake --fresh --preset Debug`（或 `Release`）重新配置，再构建；`--fresh` 需要 CMake 3.24 及以上，会重置该构建目录的缓存，手动添加的缓存选项应先记录。本次发现并备份了指向旧 `Desktop/WorkSpace` 路径的缓存，根项目及两端均已按当前位置重新生成。
+
+## VS Code 的现有任务与调试
+
+保留原 task 名称、target 名称及 ELF 路径：`sender/build/Debug/sender.elf`、`receiver/build/Debug/receiver.elf`，Release 对应更换目录名。现有 `preLaunchTask`、DAPLink/ST-LINK 和 SVD 配置继续使用。
+
+首次构建或没有缓存时先 configure；CMake Tools/IntelliSense 使用生成的 compile_commands。C++ 标准在构建目标上正式设置为 17，不仅是编辑器提示设置。此说明不表示本次重新验证了下载器或硬件调试。
+
+## 主机回归与 C/C++ 对照
 
 ```powershell
 python tests/run_tests.py
-python tools/build_firmware.py
-# 可选：需 Pillow，从真实应用绘制的显存生成预览
-python tests/render_screens.py
+python tests/render_screens.py  # 可选，需 Pillow
 ```
 
-测试不依赖串口设备，也不会烧录。默认测试输出在 `build/tests/`，固件输出在 `build/firmware/sender/` 和 `build/firmware/receiver/`。
+完整测试成功输出 `ALL SOFTWARE CHECKS PASSED`；HAL 模拟不等于上板实测。`tests/build_simulations.py` 按扩展名分别用 GCC 编译 C、G++ 编译 C++，最后用 G++ 链接，检查实际 C ABI 边界。现有 C 测试断言没有为重构降低标准。
 
-2026-09-18 软件验证使用：主机 MSYS2 UCRT64 GCC、STM32CubeCLT 1.17.0 的 arm-none-eabi-gcc。两种编译均开启 `-Wall -Wextra -Werror`。Keil 工程已更新源文件清单，当前机器未运行 Keil 编译器；不要将 GNU 编译通过理解为 Keil 已实编译通过。
+| 单项入口 | 检查内容 |
+|---|---|
+| `python tests/run_logic.py` | 原 C 协议、输入、滤波、统计逻辑 |
+| `python tests/run_drivers.py` | 原 C 驱动与 mock HAL |
+| `python tests/test_applications.py` | 通过 C 入口调用 C++ App，检查菜单/故障/PC |
+| `python tests/test_integration.py` | 双端丢包、重启、回绕 |
+| `python tests/test_cpp_equivalence.py --reference-root <重构前完整快照目录>` | 同输入下对照 C 与 C++ 的 UART、状态和显存 |
 
-## 单项检查与输出
+行为对照的参考目录必须包含原 C 应用和原测试构建脚本，不是当前工程。脚本默认分别构建两套 DLL；`--skip-build` 仅用于已有且未过时的 DLL，`--out` 指定结果 JSON。参考基线内容摘要见[迁移记录](records/2026-10-04-cpp-refactor.md)。
 
-| 命令（项目根目录） | 内容 | 默认产物 |
-|---|---|---|
-| `python tests/run_logic.py` | 协议、重传、输入、姿态与统计 | `build/tests/` |
-| `python tests/run_drivers.py` | HAL 模拟驱动回归 | `build/tests/` |
-| `python tests/test_applications.py` | 双端业务、菜单、PC 输出 | `build/tests/` |
-| `python tests/test_integration.py` | 两端链路、丢包、重启与回绕 | `build/tests/integration_results.json` |
-| `python tests/render_screens.py` | 菜单和接收端显存布局 | `build/tests/oled_screens.png` |
-| `python tools/build_firmware.py` | 两端 Cortex-M3 完整编译链接 | `build/firmware/` |
+## 产物与历史配置
 
-测试脚本以断言或非零返回码报告失败。完整成功时输出 `ALL SOFTWARE CHECKS PASSED`。固件目录中 HEX/BIN 为镜像，ELF 用于符号/调试分析，MAP 为链接布局，`.su` 为编译单元栈用量信息；这些产物不表示已烧录或完成硬件验收。
+HEX/BIN 是镜像，ELF 是调试文件，MAP 用于资源布局，`.su` 为编译单元栈用量。CMake Debug/Release 均保留原优化级别与链接布局。
 
-指定输出目录的示例：
-
-```powershell
-python tests/run_tests.py --build-dir build/tests-custom
-python tools/build_firmware.py --out build/firmware-custom
-```
-
-## 使用原 Keil 工程
-
-分别打开 [sender.uvprojx](../sender/MDK-ARM/sender.uvprojx) 和 [receiver.uvprojx](../receiver/MDK-ARM/receiver.uvprojx)。App/BSP/Service 已加入工程；GNU Arm 脚本使用独立的链接配置。Keil 版本、设备包及其实际编译结果需在对应环境确认。
-
-新增源文件后也要更新 Keil 文件清单，不能只依赖 GNU 脚本自动发现业务目录。CubeMX 重生成后的核对要求见[开发约定](development.md)。
+早期的 `tools/STM32F103C8_FLASH.ld` 和 `tools/gcc_runtime.c` 留作历史文件，现有包装脚本不使用它们；当前链接脚本在各端目录。历史 Keil 文件即使仍保留也不是本次支持的构建入口，不再同步 C++ 源清单。
