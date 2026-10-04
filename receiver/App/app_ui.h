@@ -17,4 +17,4 @@ extern "C"
 }
 #endif
 
-#endif /* __APP_UI_H */
+#endif /* 应用界面头文件保护宏 */

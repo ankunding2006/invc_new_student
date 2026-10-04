@@ -7,8 +7,8 @@ extern "C"
 
 namespace invc::sender
 {
-// One application instance per firmware: the retained C services own singleton
-// hardware/algorithm state. Construction never touches hardware; call init().
+// 每个固件仅保留一个应用实例：底层 C 服务维护硬件和算法状态。
+// 构造过程不会访问硬件；请调用 init() 完成初始化。
 class SenderApplication final
 {
   public:
@@ -48,6 +48,6 @@ class SenderApplication final
     uint32_t event_drops;
 };
 
-// Shared by the C ABI bridges and C++ callers; no dynamic allocation.
+// 供 C ABI 桥接层和 C++ 调用方共用；不进行动态内存分配。
 SenderApplication &sender_application() noexcept;
-} // namespace invc::sender
+} // invc::sender 命名空间

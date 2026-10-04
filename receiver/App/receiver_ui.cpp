@@ -13,11 +13,11 @@ namespace invc::receiver
 {
 namespace
 {
-// Zero-initialized static storage preserves the original C startup state.
+// 零初始化的静态存储，保持原有 C 启动状态。
 static_assert(std::is_trivially_default_constructible_v<ReceiverUi>);
 static_assert(std::is_trivially_destructible_v<ReceiverUi>);
 ReceiverUi instance{};
-} // namespace
+} // 匿名命名空间
 ReceiverUi &receiver_ui() noexcept
 {
     return instance;
@@ -53,7 +53,7 @@ void ReceiverUi::update(const telemetry_payload_t *p, float freq, float loss)
     row(48, "Y:%5d (0.1 deg)", p->yaw_cd);
 }
 
-} // namespace invc::receiver
+} // invc::receiver 命名空间
 
 extern "C" void app_ui_init(void)
 {

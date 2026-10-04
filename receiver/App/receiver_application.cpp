@@ -17,11 +17,11 @@ namespace invc::receiver
 {
 namespace
 {
-// Zero-initialized static storage preserves the original C startup state.
+// 零初始化的静态存储，保持原有 C 启动状态。
 static_assert(std::is_trivially_default_constructible_v<ReceiverApplication>);
 static_assert(std::is_trivially_destructible_v<ReceiverApplication>);
 ReceiverApplication instance{};
-} // namespace
+} // 匿名命名空间
 ReceiverApplication &receiver_application() noexcept
 {
     return instance;
@@ -100,7 +100,7 @@ void ReceiverApplication::task(void)
         metrics.freq_hz = metrics.wire_freq_hz = 0;
         published = forward();
     }
-    /* Close the previous window before accounting newly consumed packets. */
+    /* 统计新收到的数据包前，先结算上一统计窗口。 */
     if ((uint32_t)(now - stats_tick) >= 1000)
     {
         srv_stats_tick(now - stats_tick);
@@ -142,7 +142,7 @@ void ReceiverApplication::task(void)
                 continue;
             srv_protocol_pack_ack(packet.seq, token, ack, sizeof ack);
             ack_pending = true;
-            /* Duplicates renew link presence and ACK, but never reapply/forward data. */
+            /* 重复包会刷新链路状态并回复 ACK，但不会重复应用或转发数据。 */
             last_packet = now;
             state = RECEIVER_STATE_CONNECTED;
             if (result == STATS_NEW)
@@ -170,8 +170,8 @@ void ReceiverApplication::task(void)
                                (uint16_t)(len < (int)sizeof line ? len : (int)sizeof(line) - 1)))
                 stats_log_pending = false;
         }
-        /* Online statistics ride the next unique sample; do not inflate the
-         * PC telemetry frame rate with a second copy of the same sample. */
+        /* 在线统计随下一条唯一采样发送，避免用同一采样的副本
+         * 再次提高发往 PC 的遥测帧率。 */
         else if (state == RECEIVER_STATE_CONNECTED || published || forward())
         {
             stats_log_pending = false;
@@ -188,7 +188,7 @@ void ReceiverApplication::task(void)
     }
 }
 
-} // namespace invc::receiver
+} // invc::receiver 命名空间
 
 extern "C" void app_receiver_init(void)
 {

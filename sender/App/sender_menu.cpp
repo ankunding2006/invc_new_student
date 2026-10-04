@@ -15,11 +15,11 @@ namespace invc::sender
 {
 namespace
 {
-// Zero-initialized static storage preserves the original C startup state.
+// 零初始化的静态存储，保持原有 C 启动状态。
 static_assert(std::is_trivially_default_constructible_v<SenderMenu>);
 static_assert(std::is_trivially_destructible_v<SenderMenu>);
 SenderMenu instance{};
-} // namespace
+} // 匿名命名空间
 SenderMenu &sender_menu() noexcept
 {
     return instance;
@@ -143,7 +143,7 @@ void SenderMenu::render(void)
     }
 }
 
-} // namespace invc::sender
+} // invc::sender 命名空间
 
 extern "C" void app_menu_init(void)
 {

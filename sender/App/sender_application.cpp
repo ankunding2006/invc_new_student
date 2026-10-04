@@ -23,11 +23,11 @@ namespace invc::sender
 {
 namespace
 {
-// Zero-initialized static storage preserves the original C startup state.
+// 零初始化的静态存储，保持原有 C 启动状态。
 static_assert(std::is_trivially_default_constructible_v<SenderApplication>);
 static_assert(std::is_trivially_destructible_v<SenderApplication>);
 SenderApplication instance{};
-} // namespace
+} // 匿名命名空间
 SenderApplication &sender_application() noexcept
 {
     return instance;
@@ -68,7 +68,7 @@ bool SenderApplication::due(uint32_t now, uint32_t *last, uint32_t period)
 {
     if ((uint32_t)(now - *last) < period)
         return false;
-    /* Preserve phase without replaying a burst of stale control samples. */
+    /* 保持时间相位，避免一次性重放过期的控制采样。 */
     *last += ((uint32_t)(now - *last) / period) * period;
     return true;
 }
@@ -105,6 +105,7 @@ void SenderApplication::init(void)
     imu_was_ready = false;
     event_head = event_tail = 0;
     event_drops = 0;
+    // 初始化各硬件模块和通信服务。
     bsp_usart_init();
     bsp_joystick_init();
     bsp_key_init();
@@ -164,6 +165,7 @@ void SenderApplication::sample_and_send(uint32_t now)
     else
         view.state = (bsp_joystick_ready() && bsp_oled_ready()) ? APP_STATE_NORMAL
                                                                 : APP_STATE_FAULT_DEGRADED;
+    // 汇总传感器、按键和显示模块状态，附加到遥测标志位中。
     uint8_t flags = bsp_key_get_mask();
     if (!ready)
         flags |= TELEMETRY_IMU_FAULT;
@@ -195,6 +197,7 @@ void SenderApplication::task(void)
     uint8_t bytes[64];
     uint16_t n = bsp_usart_receive(USART_PORT_WIRELESS, bytes, sizeof bytes);
     protocol_packet_t p;
+    // 先解析无线应答，再驱动链路状态机。
     for (uint16_t i = 0; i < n; i++)
         if (protocol_parser_feed(&ack_parser, bytes[i], now, &p))
             (void)srv_link_ack(&link, &p, now);
@@ -264,7 +267,7 @@ void SenderApplication::task(void)
     }
 }
 
-} // namespace invc::sender
+} // invc::sender 命名空间
 
 extern "C" void app_sender_init(void)
 {
