@@ -5,7 +5,8 @@
             "name": "default",
             "hidden": true,
             "generator": "Ninja",
-            "binaryDir": "${sourceDir}/build/${presetName}",
+            "binaryDir": "${sourceDir}/build/unified/${presetName}",
+            "toolchainFile": "${sourceDir}/sender/cmake/gcc-arm-none-eabi.cmake",
             "cacheVariables": {}
         },
         {

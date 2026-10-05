@@ -1,4 +1,13 @@
 {
+    "C_Cpp.default.configurationProvider": "ms-vscode.cmake-tools",
+    "C_Cpp.default.compileCommands": "${workspaceFolder}/build/unified/Release/compile_commands.json",
+    "cmake.sourceDirectory": "${workspaceFolder}",
+    "cmake.configurePreset": "Release",
+    "cmake.buildPreset": "Release",
+    "cmake.cmakePath": "C:/Program Files/CMake/bin/cmake.exe",
+    "cmake.preferredGenerators": [
+        "Ninja"
+    ],
     "cortex-debug.openocdPath": "C:/OpenOCD-20240916-0.12.0/bin/openocd.exe",
     "cortex-debug.armToolchainPath": "C:/ST/STM32CubeCLT_1.17.0/GNU-tools-for-STM32/bin"
 }
