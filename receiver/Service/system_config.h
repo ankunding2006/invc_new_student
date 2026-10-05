@@ -1,26 +1,85 @@
 #ifndef SYSTEM_CONFIG_H
 #define SYSTEM_CONFIG_H
-/* Software defaults, not measurements of the transparent radio. */
+
+/**
+ * @file system_config.h
+ * @brief 全局系统参数与时序配置宏定义
+ * @note 本文件定义了无线通信时序、按键消抖参数、IMU传感器比例与校准阈值、摇杆死区等核心参数。
+ *       两端（发送端与接收端）共用该配置以保证协议与时序的一致性。
+ */
+
+/* ==============================================================================
+ * 1. 无线通信与链路层时序配置 (Wireless Link & ARQ Timings)
+ * ============================================================================== */
+
+/** @brief 遥测数据发送周期 (毫秒): 20ms 对应 50Hz 发送频率 */
 #define TELEMETRY_PERIOD_MS 20U
+
+/** @brief 等待接收端应答(ACK)的超时时间 (毫秒): 发送后在此时间内未收到 ACK 则准备重传 */
 #define LINK_ACK_TIMEOUT_MS 80U
+
+/** @brief 单个数据帧的最大重传次数: 超过此重传次数未收到 ACK 则丢弃当前帧并自增序列号 */
 #define LINK_MAX_RETRIES 2U
+
+/** @brief 链路离线判断超时 (毫秒): 接收端超过 1000ms 未收到任何有效遥测帧则判定为连接断开 */
 #define LINK_OFFLINE_MS 1000U
-/* Boot silence lets a still-running peer expire its previous seq baseline.
- * Validate this guard against the physical radio buffering/latency. */
+
+/**
+ * @brief 开机静默时间 (毫秒):
+ * 开机启动后的 1.5 秒内只监听不发送，使可能仍在运行的对端超时复位其序号基准(seq)，
+ * 避免重启引起的序号混乱。
+ */
 #define LINK_STARTUP_QUIET_MS 1500U
+
+/** @brief 协议解析器字节间最大超时 (毫秒): 帧内接收停顿超过 100ms 则认为帧损坏并重置解析状态机 */
 #define PARSER_GAP_MS 100U
+
+/* ==============================================================================
+ * 2. 按键状态机时序配置 (Button FSM Timings)
+ * ============================================================================== */
+
+/** @brief 按键消抖稳定判定时间 (毫秒): 电平连续保持 20ms 以上才确认状态变更 */
 #define KEY_DEBOUNCE_MS 20U
+
+/** @brief 按键长按触发时间阈值 (毫秒): 持续按下达到 2000ms (2秒) 触发长按事件 */
 #define KEY_LONG_MS 2000U
+
+/** @brief 按键双击最大时间间隔 (毫秒): 释放后 300ms 内再次按下触发双击事件 */
 #define KEY_DOUBLE_MS 300U
+
+/* ==============================================================================
+ * 3. IMU 姿态解算与传感器参数 (IMU & Attitude Filter Configuration)
+ * ============================================================================== */
+
+/** @brief 陀螺仪零偏静态标定采样次数: 采集 100 个静止样本计算零偏均值与方差 */
 #define IMU_CAL_SAMPLES 100U
+
+/** @brief MPU6500 陀螺仪量程灵敏度系数 (LSB / (deg/s)): ±2000 dps 量程对应 16.4 LSB/dps */
 #define IMU_GYRO_LSB_PER_DPS 16.4f
+
+/** @brief MPU6500 加速度计量程灵敏度系数 (LSB / g): ±8g 量程对应 4096 LSB/g */
 #define IMU_ACCEL_LSB_PER_G 4096.0f
+
+/** @brief 姿态解算互补滤波器比例反馈增益 Kp: 调节加速度计重力向量对陀螺仪积分的纠正强度 */
 #define IMU_CORRECTION_KP 2.0f
+
+/* ==============================================================================
+ * 4. 摇杆采样与死区配置 (Joystick ADC & Deadzone Configuration)
+ * ============================================================================== */
+
+/** @brief ADC 参考电压物理满量程 (毫伏 mV): 3.3V 供电对应 3300mV */
 #define JOYSTICK_VREF_MV 3300U
+
+/** @brief 摇杆中心死区阈值 (毫伏 mV): 中位电压 ±80mV 范围内均映射为归一化零输出 0 */
 #define JOYSTICK_DEAD_MV 80U
-/* Signed, one-based sensor axes: +1=X, +2=Y, +3=Z.
- * Use the same right-handed orthonormal mapping for accel and gyro. */
+
+/* ==============================================================================
+ * 5. IMU 载体坐标系映射配置 (IMU Body Frame Mapping)
+ * 符号与数字映射规则: 带符号且以1为基底 (+1=X, -1=-X, +2=Y, -2=-Y, +3=Z, -3=-Z)
+ * 加速度计与陀螺仪共用同一右手正交坐标系
+ * ============================================================================== */
 #define IMU_BODY_X 1
 #define IMU_BODY_Y 2
 #define IMU_BODY_Z 3
+
 #endif

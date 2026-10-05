@@ -19,6 +19,7 @@
 
 | 文档 | 主要内容 |
 |---|---|
+| [codebase_guide.md](codebase_guide.md) | 代码深度解析与阅读指南：系统全景、协议、算法与函数速查 |
 | [project-status.md](project-status.md) | 当前完成情况、题目需求到实现/证据的对应 |
 | [quick-start.md](quick-start.md) | 构建命令、测试命令、依赖与输出目录 |
 | [user-guide.md](user-guide.md) | 操作步骤、日志字段、PC 通道表与常见现象 |

@@ -99,6 +99,7 @@ int main(void)
   MX_USART1_UART_Init();
   MX_USART2_UART_Init();
   /* USER CODE BEGIN 2 */
+  /* 初始化发送端应用：配置所有外设驱动、传感器滤波状态机、链路 ARQ 与 OLED 菜单 */
   app_sender_init();
 
   /* USER CODE END 2 */
@@ -110,6 +111,7 @@ int main(void)
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
+    /* 周期性执行发送端主循环任务：按键扫描、摇杆与姿态采样、无线数据发送、重传检测及屏幕刷新 */
     app_sender_task();
   }
   /* USER CODE END 3 */

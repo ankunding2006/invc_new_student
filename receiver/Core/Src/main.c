@@ -93,6 +93,7 @@ int main(void)
   MX_USART1_UART_Init();
   MX_USART2_UART_Init();
   /* USER CODE BEGIN 2 */
+  /* 初始化接收端应用：配置双串口驱动、接收统计状态机、协议解析器与 OLED 界面 */
   app_receiver_init();
 
   /* USER CODE END 2 */
@@ -104,6 +105,7 @@ int main(void)
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
+    /* 周期性执行接收端主循环任务：接收无线数据、流式解包校验、去重、回复 ACK、转发 PC 上位机及刷新屏幕 */
     app_receiver_task();
   }
   /* USER CODE END 3 */
